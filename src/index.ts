@@ -31,7 +31,6 @@ function initElysia(telegramService = services.telegramService) {
 async function initNgrok() {
   const listener = await ngrok.connect({
     addr: Env.PORT,
-    authtoken_from_env: true,
     authtoken: Env.NGROK_AUTHTOKEN,
   });
 
