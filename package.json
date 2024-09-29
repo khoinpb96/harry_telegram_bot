@@ -6,7 +6,8 @@
     "dev": "bun --watch src/index.ts",
     "build": "bun build src/index.ts --target bun --outdir ./dist",
     "start": "NODE_ENV=production bun dist/index.js",
-    "test": "bun test"
+    "test": "bun test",
+    "install-puppeteer": "bun node_modules/puppeteer/install.mjs"
   },
   "dependencies": {
     "@elysiajs/swagger": "^1.1.1",
