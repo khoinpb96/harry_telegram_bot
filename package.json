@@ -7,7 +7,8 @@
     "build": "bun build src/index.ts --target bun --outdir ./dist",
     "start": "NODE_ENV=production bun dist/index.js",
     "test": "bun test",
-    "install-puppeteer": "bun node_modules/puppeteer/install.mjs"
+    "docker:build": "docker build -t elysia-puppeteer-app .",
+    "docker:run": "docker run -p 3000:3000 elysia-puppeteer-app"
   },
   "dependencies": {
     "@elysiajs/swagger": "^1.1.1",
