@@ -19,6 +19,13 @@ export default class TelegramService implements TelegramServiceABC {
       return true;
     }
 
+    await this.client.sendMessage({
+      chatId: chat.id,
+      text: "Response from Render.",
+    });
+
+    return false;
+
     console.log(
       `TelegramService - receive message from telegram, text: ${text}, from: ${from.username}, in: ${chat.type}-${chat.id}`
     );
