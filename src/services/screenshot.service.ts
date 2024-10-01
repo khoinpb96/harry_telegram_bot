@@ -8,6 +8,7 @@ export default class ScreeshotService implements ScreenshotServiceABC {
   public async captureTradingViewChart(symbol: string, interval: string) {
     console.log("ScreeshotService - start browser");
     const browser = await this.webdriver.launch();
+    console.log(`Connected: ${browser.connected}`);
 
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 800 });
