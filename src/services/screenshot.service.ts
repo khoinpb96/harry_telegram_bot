@@ -8,27 +8,36 @@ export default class ScreeshotService implements ScreenshotServiceABC {
   public async captureTradingViewChart(symbol: string, interval: string) {
     console.log("ScreeshotService - start browser");
     const browser = await this.webdriver.launch();
-    console.log(`Connected: ${browser.connected}`);
 
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1200, height: 800 });
+    try {
+      console.log(`Connected: ${browser.connected}`);
 
-    const url = `https://www.tradingview.com/chart/?symbol=${symbol}&interval=${interval}`;
-    const res = await page.goto(url, { waitUntil: "networkidle0" });
-    await page.waitForSelector(".chart-container", { timeout: 10000 });
+      const page = await browser.newPage();
+      await page.setViewport({ width: 1200, height: 800 });
 
-    if (!res?.ok) {
-      console.error(`ScreeshotService - Cannot load ${symbol} chart`, url);
-      throw new ServiceError(`Cannot load ${symbol} chart`, 500);
+      const url = `https://www.tradingview.com/chart/?symbol=${symbol}&interval=${interval}`;
+      const res = await page.goto(url, { waitUntil: "networkidle0" });
+      await page.waitForSelector(".chart-container", { timeout: 10000 });
+
+      if (!res?.ok) {
+        console.error(`ScreeshotService - Cannot load ${symbol} chart`, url);
+        throw new ServiceError(`Cannot load ${symbol} chart`, 500);
+      }
+
+      console.log("ScreeshotService - getting chart");
+      const chart = await page.$(".chart-container");
+      if (!chart) {
+        throw new ServiceError("Cannot select chart-container", 500);
+      }
+
+      console.log("ScreeshotService - screenshoting");
+      return Buffer.from(await chart.screenshot());
+    } catch (error) {
+      console.log("captureTradingViewChart something went wrong", error);
+      throw error;
+    } finally {
+      await browser.close();
+      console.log("Browser closed");
     }
-
-    console.log("ScreeshotService - getting chart");
-    const chart = await page.$(".chart-container");
-    if (!chart) {
-      throw new ServiceError("Cannot select chart-container", 500);
-    }
-
-    console.log("ScreeshotService - screenshoting");
-    return Buffer.from(await chart.screenshot());
   }
 }
