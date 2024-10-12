@@ -48,13 +48,12 @@ async function main(deps: { telegramClient: externals.TelegramClient }) {
 
   initElysia();
 
-  // For dev only
-  // const ngrokUrl = await initNgrok();
-  // const webhookUrl = `${ngrokUrl}/webhook/telegram`;
-  // await Promise.all([
-  //   telegramClient.setWebhook(webhookUrl),
-  //   telegramClient.setCommands(),
-  // ]);
+  const ngrokUrl = await initNgrok();
+  const webhookUrl = `${ngrokUrl}/webhook/telegram`;
+  await Promise.all([
+    telegramClient.setWebhook(webhookUrl),
+    telegramClient.setCommands(),
+  ]);
 }
 
 await main({
