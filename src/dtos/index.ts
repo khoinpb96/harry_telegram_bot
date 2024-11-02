@@ -29,9 +29,9 @@ export const telegramWebhookBody = t.Object({
   }),
 });
 
-export type TelegramRes = {
+export type TelegramRes<R = any> = {
   ok: boolean;
-  result: any;
+  result: R;
   description: string;
 };
 

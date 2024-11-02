@@ -4,10 +4,10 @@
   "type": "module",
   "scripts": {
     "dev": "bun --watch src/index.ts",
-    "build": "bun build src/index.ts --target bun --outdir ./dist",
+    "build": "bun run scripts/build.ts",
     "start": "NODE_ENV=production bun dist/index.js",
     "test": "bun test",
-    "install-puppeteer": "bun node_modules/puppeteer/install.mjs"
+    "postinstall": "playwright install chromium"
   },
   "dependencies": {
     "@elysiajs/swagger": "^1.1.1",
@@ -15,7 +15,7 @@
     "axios": "^1.7.7",
     "elysia": "^1.1.16",
     "form-data": "^4.0.0",
-    "playwright": "^1.47.2",
+    "playwright": "^1.48.2",
     "puppeteer": "^23.4.1"
   },
   "devDependencies": {

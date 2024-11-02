@@ -2,6 +2,7 @@ export class Env {
   static PORT = Bun.env.PORT || 3000;
   static TELEGRAM_BOT_TOKEN = Bun.env.TELEGRAM_BOT_TOKEN;
   static NGROK_AUTHTOKEN = Bun.env.NGROK_AUTHTOKEN;
+  static PRODUCTION_URL = Bun.env.PRODUCTION_URL;
 }
 
 export class ServiceError extends Error {

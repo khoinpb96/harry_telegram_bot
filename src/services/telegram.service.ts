@@ -28,12 +28,18 @@ export default class TelegramService implements TelegramServiceABC {
       return true;
     }
 
+    const responseId = await this.client.sendMessage({
+      chatId: chat.id,
+      text: "Loading...",
+    });
+
     switch (chat.type) {
       case "supergroup":
       case "channel":
-        await this.client.sendMessage({
+        await this.client.editMessage({
           chatId: chat.id,
           text: "Only support private and group chat.",
+          messageId: responseId,
         });
 
         return false;
@@ -43,9 +49,10 @@ export default class TelegramService implements TelegramServiceABC {
 
     if (command.includes(utils.TelegramBotCommands.GetChart)) {
       if (!symbol || !interval) {
-        await this.client.sendMessage({
+        await this.client.editMessage({
           chatId: chat.id,
           text: "Invalid format, must be /getchart <symbol> <interval>, .e.g /getchart xauusd 4h.",
+          messageId: responseId,
         });
 
         return false;
@@ -53,24 +60,38 @@ export default class TelegramService implements TelegramServiceABC {
 
       const mappedInterval = this.mapInterval(interval);
       if (!mappedInterval) {
-        await this.client.sendMessage({
+        await this.client.editMessage({
           chatId: chat.id,
           text: "Invalid interval, we only support 1m, 3m, 5m, 15m, 30m, 45m, 1h, 2h, 3h, 4h, 1D, 1W, 1M, 3M, 6M, 1Y",
+          messageId: responseId,
         });
 
         return false;
       }
 
-      return this.getChart({
+      const isChartSent = this.getChart({
         symbol,
         interval: mappedInterval,
         chatId: chat.id,
+        messageId: responseId,
       });
+
+      if (!isChartSent) {
+        await this.client.editMessage({
+          chatId: chat.id,
+          text: "Something went wrong, please try again.",
+          messageId: responseId,
+        });
+        return false;
+      }
+
+      return true;
     }
 
-    await this.client.sendMessage({
+    await this.client.editMessage({
       chatId: chat.id,
       text: "We don't support this command.",
+      messageId: responseId,
     });
 
     return false;
@@ -78,19 +99,26 @@ export default class TelegramService implements TelegramServiceABC {
 
   private async getChart(inputs: {
     chatId: number;
+    messageId: number;
     symbol: string;
     interval: string;
   }): Promise<boolean> {
-    const { chatId, symbol, interval } = inputs;
-    const photoBuffer = await this.screenshotService.captureTradingViewChart(
-      symbol,
-      interval
-    );
-    return this.client.sendPhoto({
-      chatId,
-      photoBuffer,
-      caption: `${symbol} - ${interval}`,
-    });
+    const { chatId, messageId, symbol, interval } = inputs;
+    try {
+      const photoBuffer = await this.screenshotService.captureTradingViewChart(
+        symbol,
+        interval
+      );
+      return this.client.editMessageMedia({
+        chatId,
+        messageId,
+        photoBuffer,
+        caption: `${symbol} - ${interval}`,
+      });
+    } catch (error) {
+      console.error(`TelegramService - getChart error`, error);
+      return false;
+    }
   }
 
   private mapInterval(interval: string) {
