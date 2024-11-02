@@ -23,15 +23,15 @@ export default class TelegramService implements TelegramServiceABC {
       `TelegramService - receive message from telegram, text: ${text}, from: ${from.username}, in: ${chat.type}-${chat.id}`
     );
 
-    const responseId = await this.client.sendMessage({
-      chatId: chat.id,
-      text: "Loading...",
-    });
-
     if (text.at(0) !== "/") {
       console.log(`TelegramService - not a command, skip`);
       return true;
     }
+
+    const responseId = await this.client.sendMessage({
+      chatId: chat.id,
+      text: "Loading...",
+    });
 
     switch (chat.type) {
       case "supergroup":
@@ -69,12 +69,23 @@ export default class TelegramService implements TelegramServiceABC {
         return false;
       }
 
-      return this.getChart({
+      const isChartSent = this.getChart({
         symbol,
         interval: mappedInterval,
         chatId: chat.id,
         messageId: responseId,
       });
+
+      if (!isChartSent) {
+        await this.client.editMessage({
+          chatId: chat.id,
+          text: "Something went wrong, please try again.",
+          messageId: responseId,
+        });
+        return false;
+      }
+
+      return true;
     }
 
     await this.client.editMessage({
@@ -93,16 +104,21 @@ export default class TelegramService implements TelegramServiceABC {
     interval: string;
   }): Promise<boolean> {
     const { chatId, messageId, symbol, interval } = inputs;
-    const photoBuffer = await this.screenshotService.captureTradingViewChart(
-      symbol,
-      interval
-    );
-    return this.client.editMessageMedia({
-      chatId,
-      messageId,
-      photoBuffer,
-      caption: `${symbol} - ${interval}`,
-    });
+    try {
+      const photoBuffer = await this.screenshotService.captureTradingViewChart(
+        symbol,
+        interval
+      );
+      return this.client.editMessageMedia({
+        chatId,
+        messageId,
+        photoBuffer,
+        caption: `${symbol} - ${interval}`,
+      });
+    } catch (error) {
+      console.error(`TelegramService - getChart error`, error);
+      return false;
+    }
   }
 
   private mapInterval(interval: string) {

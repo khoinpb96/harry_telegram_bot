@@ -31,6 +31,18 @@ export class TelegramClient {
     console.log("TelegramClient - setCommands successfully");
   }
 
+  public async deleteWebhook() {
+    const { data } = await this.apiClient.post<TelegramRes>("/deleteWebhook", {
+      drop_pending_updates: true,
+    });
+
+    if (!data.ok) {
+      throw new Error(data.description);
+    }
+
+    console.log("TelegramClient - deleteWebhook successfully");
+  }
+
   public async sendMessage(payload: { chatId: number; text: string }) {
     const { chatId, text } = payload;
 
@@ -49,8 +61,6 @@ export class TelegramClient {
       throw new Error(data.description);
     }
 
-    console.log(data);
-
     console.log("TelegramClient - sendMessage success");
 
     return data.result.message_id;
@@ -63,7 +73,6 @@ export class TelegramClient {
   }) {
     const { chatId, text, messageId } = payload;
 
-    console.log("edit ne", payload);
     const body = {
       chat_id: chatId,
       message_id: messageId,

@@ -1,38 +1,49 @@
-import type { ScreenshotServiceABC } from "@/services/base.service";
-import { ServiceError } from "@/utils";
-import puppeteer from "puppeteer";
+import { chromium } from "playwright";
 
-export default class ScreenshotService implements ScreenshotServiceABC {
-  private logger = {
-    info: (message: string) => console.log(`[ScreenshotService] ${message}`),
-    error: (message: string, error?: Error) =>
-      console.error(`[ScreenshotService] ${message}`, error),
-  };
-
-  constructor(private webdriver = puppeteer) {}
-
+const TIME_OUT = 30000; // 30 seconds
+export default class ScreenshotService {
   public async captureTradingViewChart(symbol: string, interval: string) {
-    const browser = await this.webdriver.launch();
-    this.logger.info("Browser conntected");
+    console.log(
+      "ScreenshotService - captureTradingViewChart",
+      symbol,
+      interval
+    );
 
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1200, height: 800 });
+    const browser = await chromium.launch({
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ],
+    });
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await page.setViewportSize({
+      width: 1600,
+      height: 800,
+    });
 
-    const url = `https://www.tradingview.com/chart/?symbol=${symbol}&interval=${interval}`;
-    const res = await page.goto(url, { waitUntil: "networkidle0" });
-    await page.waitForSelector(".chart-container", { timeout: 10000 });
+    await page.goto(
+      `https://www.tradingview.com/chart/?symbol=${symbol}&interval=${interval}`,
+      {
+        waitUntil: "networkidle",
+        timeout: TIME_OUT,
+      }
+    );
 
-    if (!res?.ok) {
-      console.error(`ScreenshotService - Cannot load ${symbol} chart`, url);
-      throw new ServiceError(`Cannot load ${symbol} chart`, 500);
-    }
+    await page.waitForSelector(".chart-container", {
+      timeout: TIME_OUT,
+    });
 
-    const chart = await page.$(".chart-container");
-    if (!chart) {
-      throw new ServiceError("Cannot select chart-container", 500);
-    }
+    const screenshot = await page
+      .locator(".chart-container")
+      .screenshot({ type: "png" });
 
-    this.logger.info(`Capturing chart for ${symbol}`);
-    return Buffer.from(await chart.screenshot());
+    // Ensure cleanup
+    if (page) await page.close();
+    if (browser) await browser.close();
+
+    return screenshot;
   }
 }

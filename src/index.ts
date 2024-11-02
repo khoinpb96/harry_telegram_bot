@@ -28,6 +28,25 @@ function initElysia(telegramService = services.telegramService) {
     .listen(Env.PORT, () => console.log(`Server running on port:${Env.PORT}`));
 }
 
+async function getWebhookUrl(): Promise<string> {
+  const isProd = process.env.NODE_ENV === "production";
+
+  if (isProd) {
+    // In production, use your actual domain
+    if (!Env.PRODUCTION_URL) {
+      throw new Error(
+        "PRODUCTION_URL environment variable is required in production"
+      );
+    }
+
+    return `${Env.PRODUCTION_URL}/webhook/telegram`;
+  }
+
+  // In development, use ngrok
+  const ngrokUrl = await initNgrok();
+  return `${ngrokUrl}/webhook/telegram`;
+}
+
 async function initNgrok() {
   const listener = await ngrok.connect({
     addr: Env.PORT,
@@ -45,9 +64,15 @@ async function initNgrok() {
 
 async function main(deps: { telegramClient: externals.TelegramClient }) {
   const { telegramClient } = deps;
+
+  // Initialize server
   initElysia();
-  const ngrokUrl = await initNgrok();
-  const webhookUrl = `${ngrokUrl}/webhook/telegram`;
+
+  // Get appropriate webhook URL based on environment
+  const webhookUrl = await getWebhookUrl();
+
+  // Setup telegram webhook
+  await telegramClient.deleteWebhook();
   await Promise.all([
     telegramClient.setWebhook(webhookUrl),
     telegramClient.setCommands(),
