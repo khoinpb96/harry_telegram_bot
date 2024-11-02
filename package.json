@@ -7,7 +7,7 @@
     "build": "bun run scripts/build.ts",
     "start": "NODE_ENV=production bun dist/index.js",
     "test": "bun test",
-    "postinstall": "playwright install chromium"
+    "postinstall": "npx playwright install && playwright install chromium"
   },
   "dependencies": {
     "@elysiajs/swagger": "^1.1.1",
