@@ -26,3 +26,31 @@ export class Constants {
 
   static botName = "harry_trade_assistant_bot";
 }
+
+export class Logger {
+  constructor(private prefix?: string) {}
+
+  debug(message: string) {
+    if (process.env.NODE_ENV !== "production") {
+      console.log(
+        `[DEBUG] ${this.prefix ? `[${this.prefix}] -` : ""} ${message}`
+      );
+    }
+  }
+
+  info(message: string) {
+    console.log(`[INFO] ${this.prefix ? `[${this.prefix}] -` : ""} ${message}`);
+  }
+
+  error(msg: string, error: unknown) {
+    console.error(
+      `[ERROR] ${this.prefix ? `[${this.prefix}] -` : ""} ${msg} ${
+        error instanceof Error ? error.message : error
+      }`
+    );
+
+    if (process.env.NODE_ENV !== "production" && error instanceof Error) {
+      console.error(error.stack);
+    }
+  }
+}
