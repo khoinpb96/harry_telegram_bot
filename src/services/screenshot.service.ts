@@ -6,13 +6,12 @@ import {
   type Page,
 } from "playwright";
 
-const DEFAULT_TIMEOUT = 3 * 60 * 1000; // 3 minutes
+const DEFAULT_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
 export default class ScreenshotService {
   private logger = new Logger(ScreenshotService.name);
   private browser: Browser | undefined;
   private browserContext: BrowserContext | undefined;
-  private page: Page | undefined;
 
   public async captureTradingViewChart(
     symbol: string,
@@ -44,37 +43,49 @@ export default class ScreenshotService {
         });
       }
 
-      if (!this.page) {
-        this.page = await this.browserContext.newPage();
-      }
+      const page = await this.browserContext.newPage();
+
+      // Enable request interception to block unnecessary resources
+      await page.route("**/*", async (route) => {
+        const request = route.request();
+        // Block unnecessary resource types
+        if (
+          ["image", "media", "font", "other"].includes(request.resourceType())
+        ) {
+          if (!request.url().includes("chart")) {
+            await route.abort();
+            return;
+          }
+        }
+
+        await route.continue();
+      });
 
       this.logger.info(`Starting chart capture for ${symbol}`);
 
-      await this.page.goto(
+      await page.goto(
         `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(
           symbol
         )}&interval=${encodeURIComponent(interval)}`,
         {
           waitUntil: "networkidle",
-          timeout: timeout / 2, // Split timeout between loading and rendering
+          timeout,
         }
       );
 
-      this.logger.info("Page loaded, waiting for chart at");
+      this.logger.info("Page loaded, waiting for chart");
 
-      await this.page.waitForSelector(".chart-container", {
+      await page.waitForSelector(".chart-container", {
         timeout,
         state: "visible",
       });
 
-      this.logger.info("Chart loaded, taking screenshot at");
+      this.logger.info("Chart loaded, taking screenshot");
 
-      const screenshot = await this.page
-        .locator(".chart-container")
-        .screenshot({
-          type: "png",
-          timeout: 30000, // Separate timeout for screenshot operation
-        });
+      const screenshot = await page.locator(".chart-container").screenshot({
+        type: "png",
+        timeout,
+      });
 
       this.logger.info(
         `Finish chart capture for ${symbol} in ${Date.now() - startAt}ms`
